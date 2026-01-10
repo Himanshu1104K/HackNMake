@@ -60,13 +60,21 @@ async def get_status(websocket: WebSocket):
                     if not data_records:
                         continue
 
-                    # Get the latest data record
+                    # Take last 5 records for averaging (data format: {id: [data(object), data(object), ...]})
+                    last_5_records = (
+                        data_records[:5] if len(data_records) >= 5 else data_records
+                    )
+
+                    # Get the latest data record for other fields (location, accelerometer, etc.)
                     latest_record = data_records[0]
 
-                    # Parse health data
+                    # Parse health data from last 5 records (averaged)
+                    health_metrics = None
                     if initial_sent:
-                        # After initial send, calculate health status
-                        health_metrics = parse_health_data(data_records, device_id=animal_id)
+                        # After initial send, calculate health status from averaged last 5 records
+                        health_metrics = parse_health_data(
+                            last_5_records, device_id=animal_id
+                        )
                         overall_health_percentage = health_metrics.get(
                             "overall_health_percentage"
                         )
@@ -80,17 +88,30 @@ async def get_status(websocket: WebSocket):
                         overall_health_percentage = None
                         health_status = None
 
-                    # Build health status object
+                    # Build health status object (one entity per animal with averaged health metrics)
                     health_status_obj = AnimalHealthStatus(
-                        id=latest_record.get("id", ""),
+                        id=animal_id,  # Use animal_id as the id
                         animal_id=animal_id,
                         accelerometer=latest_record.get("accelerometer"),
                         gyroscrope=latest_record.get("gyroscrope"),
                         longitude=latest_record.get("longitude"),
                         latitude=latest_record.get("latitude"),
-                        blood_pressure=latest_record.get("blood_pressure"),
-                        body_temp=latest_record.get("body_temp"),
-                        heart_rate=latest_record.get("heart_rate"),
+                        # Use averaged values from parse_health_data if available, otherwise use latest record
+                        blood_pressure=(
+                            health_metrics.get("blood_pressure")
+                            if health_metrics and initial_sent
+                            else latest_record.get("blood_pressure")
+                        ),
+                        body_temp=(
+                            health_metrics.get("body_temp")
+                            if health_metrics and initial_sent
+                            else latest_record.get("body_temp")
+                        ),
+                        heart_rate=(
+                            health_metrics.get("heart_rate")
+                            if health_metrics and initial_sent
+                            else latest_record.get("heart_rate")
+                        ),
                         overall_health_percentage=overall_health_percentage,
                         health_status=health_status,
                     )

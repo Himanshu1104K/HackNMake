@@ -26,14 +26,55 @@ def parse_health_data(
         return {"overall_health_percentage": None, "health_status": None}
 
     try:
-        # Extract health metrics from the latest record
-        latest_record = data_records[
-            0
-        ]  # Assuming records are sorted by created_at desc
+        # Take last 5 records for averaging (or all if less than 5)
+        records_to_analyze = (
+            data_records[:5] if len(data_records) >= 5 else data_records
+        )
 
-        blood_pressure = latest_record.get("blood_pressure")
-        body_temp = latest_record.get("body_temp")
-        heart_rate = latest_record.get("heart_rate")
+        # Calculate averages from multiple records
+        blood_pressures = []
+        body_temps = []
+        heart_rates = []
+
+        for record in records_to_analyze:
+            bp = record.get("blood_pressure")
+            if bp and isinstance(bp, dict):
+                blood_pressures.append(bp)
+
+            temp = record.get("body_temp")
+            if temp is not None:
+                body_temps.append(temp)
+
+            hr = record.get("heart_rate")
+            if hr is not None:
+                heart_rates.append(hr)
+
+        # Calculate average blood pressure
+        blood_pressure = None
+        if blood_pressures:
+            systolic_values = [
+                bp.get("systolic")
+                for bp in blood_pressures
+                if bp.get("systolic") is not None
+            ]
+            diastolic_values = [
+                bp.get("diastolic")
+                for bp in blood_pressures
+                if bp.get("diastolic") is not None
+            ]
+            if systolic_values and diastolic_values:
+                avg_systolic = sum(systolic_values) / len(systolic_values)
+                avg_diastolic = sum(diastolic_values) / len(diastolic_values)
+                blood_pressure = {
+                    "systolic": round(avg_systolic, 1),
+                    "diastolic": round(avg_diastolic, 1),
+                }
+
+        # Calculate average body temperature
+        body_temp = sum(body_temps) / len(body_temps) if body_temps else None
+
+        # Calculate average heart rate
+        heart_rate = round(sum(heart_rates) / len(heart_rates)) if heart_rates else None
 
         # Calculate individual health scores (0-100, where 100 is best)
         scores = []
@@ -103,6 +144,9 @@ def parse_health_data(
             return {
                 "overall_health_percentage": round(overall_health_percentage, 2),
                 "health_status": health_status,
+                "blood_pressure": blood_pressure,
+                "body_temp": round(body_temp, 1) if body_temp is not None else None,
+                "heart_rate": heart_rate,
             }
         else:
             return {"overall_health_percentage": None, "health_status": None}
