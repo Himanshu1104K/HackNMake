@@ -1,0 +1,35 @@
+# FastAPI and ASGI server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+alembic==1.12.1
+pandas>=2.0.0
+
+# Validation and serialization
+pydantic>=2.7.4,<3.0.0
+pydantic-settings==2.1.0
+
+# HTTP client
+httpx==0.25.2
+
+# Development
+firebase-admin==6.5.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+
+# Swagger
+fastapi-swagger-dark==0.0.9
+
+redis[hiredis]==4.5.0
+
+langchain
+langgraph
