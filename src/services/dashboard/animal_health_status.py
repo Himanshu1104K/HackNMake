@@ -37,9 +37,10 @@ async def get_status(websocket: WebSocket):
 
     Initially sends data with overall_health_percentage and health_status as None,
     then uses data_parser to calculate and send updated health status.
+    
+    Note: websocket.accept() should be called by the route handler before calling this function.
     """
     try:
-        await websocket.accept()
         logger.info("WebSocket connection accepted for animal health status")
 
         # Send initial data with health_status and overall_health_percentage as None
