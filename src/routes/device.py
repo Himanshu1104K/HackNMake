@@ -111,6 +111,12 @@ async def create_animal_data(animal: Animal):
     )
 
 
+@router.get("/animal/id")
+async def get_animal_data_route(id: str):
+    result = await get_device_data(id)
+    return result
+
+
 @router.post("/animals/import", response_model=ImportAnimalsResponse)
 async def import_animals_from_csv_route(file: UploadFile = File(...)):
     """
