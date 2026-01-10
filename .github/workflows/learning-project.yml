@@ -3,29 +3,30 @@ name: learning-project-workflow
 on:
   push:
     branches:
-      - "main"
+      - main
 
 jobs:
   CI-CD:
-    runs-on: "self-hosted"
-    steps:
-      - name: update system
-        run: apt update
+    runs-on: self-hosted
 
-      - name: Code-Checkout
+    steps:
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Remove Docker Container
+      - name: Update system
+        run: sudo apt update
+
+      - name: Stop & Remove Existing Container
         run: |
-          docker stop learning-project || true
-          docker rm -f learning-project || true
+          sudo docker stop learning-project || true
+          sudo docker rm -f learning-project || true
 
       - name: Build Docker Image
-        run: docker build -t learning-project:latest .
+        run: sudo docker build -t learning-project:latest .
 
       - name: Run Docker Container
         run: |
-          docker run -d \
+          sudo docker run -d \
             --name learning-project \
             -p 8000:8000 \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
@@ -33,5 +34,5 @@ jobs:
             --restart unless-stopped \
             learning-project:latest
 
-      - name: Docker Clean
-        run: docker system prune -af
+      - name: Cleanup unused images
+        run: sudo docker image prune -f
