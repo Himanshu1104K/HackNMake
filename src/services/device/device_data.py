@@ -12,41 +12,46 @@ logger = get_logger(__name__)
 
 async def get_device_data(id: str):
     """
-    Get device data by joining Animal with Animals table.
+    Fetch animal by device ID and return id, name, status, is_critical, and created_at.
 
     Args:
         id: The device/animal ID (Animal.id)
 
     Returns:
-        dict: Dictionary with id, name, status, is_critical, and created_at
-              Returns None if device not found
+        dict: Dictionary containing:
+            - id: Animal device ID
+            - name: Animal name from Animals table
+            - status: Animal status
+            - is_critical: Critical flag
+            - created_at: Creation timestamp
+        Returns None if device not found
     """
     db: Session = SessionLocal()
     try:
-        # Query Animal and eagerly load the related Animals table using joinedload
-        data = (
+        # Fetch animal with joined Animals table to get the name
+        animal = (
             db.query(AnimalModel)
             .options(joinedload(AnimalModel.animal_type))
             .filter(AnimalModel.id == id)
             .first()
         )
 
-        if not data:
-            logger.warning(f"Device with id {id} not found")
+        if not animal:
+            logger.warning(f"Animal with id {id} not found")
             return None
 
-        # Get name from the related Animals table
-        name = data.animal_type.name if data.animal_type else None
+        # Extract name from related Animals table
+        name = animal.animal_type.name if animal.animal_type else None
 
         return {
-            "id": data.id,
+            "id": animal.id,
             "name": name,
-            "status": data.status,
-            "is_critical": data.is_critical,
-            "created_at": data.created_at.isoformat() if data.created_at else None,
+            "status": animal.status,
+            "is_critical": animal.is_critical,
+            "created_at": animal.created_at.isoformat() if animal.created_at else None,
         }
     except Exception as e:
-        logger.error(f"Error getting device data: {e}")
+        logger.error(f"Error fetching animal data for id {id}: {e}")
         return None
     finally:
         db.close()

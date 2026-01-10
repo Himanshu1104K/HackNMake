@@ -111,7 +111,7 @@ async def create_animal_data(animal: Animal):
     )
 
 
-@router.get("/animal/id")
+@router.get("/animal/{id}/id")
 async def get_animal_data_route(id: str):
     result = await get_device_data(id)
     return result
