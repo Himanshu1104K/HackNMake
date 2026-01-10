@@ -1,15 +1,22 @@
 from typing import List, Dict, Optional
+from sqlalchemy.orm import Session
+from src.models.schema.animal import Animal as AnimalModel
+from src.core.db import SessionLocal
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def parse_health_data(data_records: List[Dict]) -> Dict[str, Optional[float]]:
+def parse_health_data(
+    data_records: List[Dict], device_id: Optional[str] = None
+) -> Dict[str, Optional[float]]:
     """
     Parse health data from data records and calculate overall health percentage and status.
+    Automatically updates animal status in database if health status is critical.
 
     Args:
         data_records: List of data record dictionaries containing health metrics
+        device_id: Optional device ID (Animal.id) to update status in database if critical
 
     Returns:
         dict: Dictionary with 'overall_health_percentage' and 'health_status'
@@ -89,6 +96,10 @@ def parse_health_data(data_records: List[Dict]) -> Dict[str, Optional[float]]:
             else:
                 health_status = "critical"
 
+            # Update animal status in database if critical and device_id is provided
+            if health_status == "critical" and device_id:
+                update_animal_status_if_critical(device_id, health_status)
+
             return {
                 "overall_health_percentage": round(overall_health_percentage, 2),
                 "health_status": health_status,
@@ -99,3 +110,46 @@ def parse_health_data(data_records: List[Dict]) -> Dict[str, Optional[float]]:
     except Exception as e:
         logger.error(f"Error parsing health data: {e}")
         return {"overall_health_percentage": None, "health_status": None}
+
+
+def update_animal_status_if_critical(
+    device_id: str, health_status: Optional[str]
+) -> bool:
+    """
+    Update animal status to 'critical' in the database if health status is critical.
+
+    Args:
+        device_id: The animal device ID (Animal.id in the database)
+        health_status: The health status from parse_health_data ('normal', 'warning', or 'critical')
+
+    Returns:
+        bool: True if the status was updated, False otherwise
+    """
+    if health_status != "critical":
+        return False
+
+    db: Session = SessionLocal()
+    try:
+        # Find the animal by device ID
+        animal = db.query(AnimalModel).filter(AnimalModel.id == device_id).first()
+
+        if not animal:
+            logger.warning(f"Animal with device_id {device_id} not found")
+            return False
+
+        # Update status and is_critical flag
+        animal.status = "critical"
+        animal.is_critical = True
+
+        db.commit()
+        db.refresh(animal)
+
+        logger.info(f"Updated animal {device_id} status to critical")
+        return True
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating animal status for {device_id}: {e}")
+        return False
+    finally:
+        db.close()

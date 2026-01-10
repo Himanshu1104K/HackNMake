@@ -66,7 +66,7 @@ async def get_status(websocket: WebSocket):
                     # Parse health data
                     if initial_sent:
                         # After initial send, calculate health status
-                        health_metrics = parse_health_data(data_records)
+                        health_metrics = parse_health_data(data_records, device_id=animal_id)
                         overall_health_percentage = health_metrics.get(
                             "overall_health_percentage"
                         )
