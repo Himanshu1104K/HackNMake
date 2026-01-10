@@ -10,7 +10,7 @@ jobs:
     runs-on: "self-hosted"
     steps:
       - name: update system
-        run: sudo apt update
+        run: apt update
 
       - name: Code-Checkout
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
             --name learning-project \
             -p 8000:8000 \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+            -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
             --restart unless-stopped \
             learning-project:latest
 
