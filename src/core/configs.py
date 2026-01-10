@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     DATA_EXPIRY_SECONDS: int = 60 * 60 * 24  # 1 day
     database_url: str = (
-        "postgresql+psycopg://heyova:HackMake1@learning-scalling.postgres.database.azure.com:5432/postgres?sslmode=require"
+        "postgresql+psycopg://"
     )
 
     class Config:
