@@ -160,14 +160,15 @@ def update_animal_status_if_critical(
     device_id: str, health_status: Optional[str]
 ) -> bool:
     """
-    Update animal status to 'critical' in the database if health status is critical.
+    Update animal is_critical flag in the database if health status is critical.
+    Does not modify the status field (which is managed by WebSocket connection state).
 
     Args:
         device_id: The animal device ID (Animal.id in the database)
         health_status: The health status from parse_health_data ('normal', 'warning', or 'critical')
 
     Returns:
-        bool: True if the status was updated, False otherwise
+        bool: True if the is_critical flag was updated, False otherwise
     """
     if health_status != "critical":
         return False
@@ -181,19 +182,18 @@ def update_animal_status_if_critical(
             logger.warning(f"Animal with device_id {device_id} not found")
             return False
 
-        # Update status and is_critical flag
-        animal.status = "critical"
+        # Only update is_critical flag, not status
         animal.is_critical = True
 
         db.commit()
         db.refresh(animal)
 
-        logger.info(f"Updated animal {device_id} status to critical")
+        logger.info(f"Updated animal {device_id} is_critical to True")
         return True
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating animal status for {device_id}: {e}")
+        logger.error(f"Error updating animal is_critical for {device_id}: {e}")
         return False
     finally:
         db.close()
