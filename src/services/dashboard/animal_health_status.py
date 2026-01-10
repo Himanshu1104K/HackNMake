@@ -131,7 +131,12 @@ async def get_status(websocket: WebSocket):
                 )
 
                 # Send to websocket
-                await websocket.send_json(response.model_dump())
+                try:
+                    await websocket.send_json(response.model_dump())
+                except Exception as e:
+                    # WebSocket may be closed - break the loop
+                    logger.warning(f"Failed to send data to WebSocket: {e}")
+                    break
 
                 if not initial_sent:
                     initial_sent = True
@@ -146,11 +151,14 @@ async def get_status(websocket: WebSocket):
 
             except Exception as e:
                 logger.error(f"Error sending health status data: {e}")
-                await websocket.send_json({"type": "error", "message": str(e)})
-                await asyncio.sleep(5)  # Wait before retrying
+                try:
+                    await websocket.send_json({"type": "error", "message": str(e)})
+                    await asyncio.sleep(5)  # Wait before retrying
+                except Exception:
+                    # WebSocket is closed - break the loop
+                    logger.warning("WebSocket closed, stopping health status updates")
+                    break
 
     except Exception as e:
         logger.error(f"WebSocket connection error: {e}")
-    finally:
-        await websocket.close()
-        logger.info("WebSocket connection closed")
+        # Don't close here - let the route handler manage the connection lifecycle

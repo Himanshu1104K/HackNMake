@@ -57,21 +57,41 @@ async def device_data(websocket: WebSocket):
             if device_data is not None:
                 await handle_device_data(websocket, device_data)
             else:
-                await websocket.send_json(
-                    {"type": "error", "message": "device doesn't exist"}
-                )
-                await websocket.close(code=1008, reason="device doesn't exist")
+                try:
+                    await websocket.send_json(
+                        {"type": "error", "message": "device doesn't exist"}
+                    )
+                    await websocket.close(code=1008, reason="device doesn't exist")
+                except Exception:
+                    # WebSocket may already be closed
+                    pass
 
         except Exception as e:
-            await websocket.send_json(
-                {"type": "error", "message": f"device doesn't exist: {e}"}
-            )
-            await websocket.close(code=1008, reason=f"device doesn't exist: {e}")
+            try:
+                await websocket.send_json(
+                    {"type": "error", "message": f"device doesn't exist: {e}"}
+                )
+                await websocket.close(code=1008, reason=f"device doesn't exist: {e}")
+            except Exception:
+                # WebSocket may already be closed
+                pass
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        await websocket.close(code=1008, reason=f"Unexpected error: {e}")
+        try:
+            await websocket.close(code=1008, reason=f"Unexpected error: {e}")
+        except Exception:
+            # WebSocket may already be closed
+            pass
     finally:
-        await websocket.close()
+        # Only close if the WebSocket is still open
+        try:
+            await websocket.close()
+        except RuntimeError:
+            # WebSocket is already closed - ignore the error
+            pass
+        except Exception:
+            # Any other error closing the WebSocket - ignore
+            pass
 
 
 @router.get("/animals", response_model=AnimalDataResponse)

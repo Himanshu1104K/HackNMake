@@ -10,7 +10,7 @@ jobs:
     runs-on: "self-hosted"
     steps:
       - name: update system
-        run: apt update
+        run: sudo apt update
 
       - name: Code-Checkout
         uses: actions/checkout@v4

@@ -77,6 +77,14 @@ async def manage_data(device_id: str, data: dict) -> None:
         )  # Handle typo variant
         longitude = data.get("longitude")
         latitude = data.get("latitude")
+        body_temp = data.get("body_temp")
+        heart_rate = data.get("heart_rate")
+
+        # Convert accelerometer and gyroscrope dicts to JSON strings if they are dicts
+        if accelerometer is not None and isinstance(accelerometer, dict):
+            accelerometer = json.dumps(accelerometer)
+        if gyroscrope is not None and isinstance(gyroscrope, dict):
+            gyroscrope = json.dumps(gyroscrope)
 
         new_data = DataModel(
             id=data_id,
@@ -85,6 +93,8 @@ async def manage_data(device_id: str, data: dict) -> None:
             gyroscrope=gyroscrope,
             longitude=float(longitude) if longitude is not None else None,
             latitude=float(latitude) if latitude is not None else None,
+            body_temp=float(body_temp) if body_temp is not None else None,
+            heart_rate=int(heart_rate) if heart_rate is not None else None,
         )
 
         db.add(new_data)
@@ -114,13 +124,22 @@ async def handle_device_data(websocket: WebSocket, device_data: dict):
                 await manage_data(device_id, data)
             except json.JSONDecodeError as e:
                 logger.error(f"Invalid JSON received: {e}")
-                await websocket.send_json(
-                    {"type": "error", "message": "Invalid JSON format"}
-                )
+                try:
+                    await websocket.send_json(
+                        {"type": "error", "message": "Invalid JSON format"}
+                    )
+                except Exception:
+                    # WebSocket is closed - break the loop
+                    logger.warning("WebSocket closed while processing data")
+                    break
             except Exception as e:
                 logger.error(f"Error processing data: {e}")
-                await websocket.send_json({"type": "error", "message": str(e)})
+                try:
+                    await websocket.send_json({"type": "error", "message": str(e)})
+                except Exception:
+                    # WebSocket is closed - break the loop
+                    logger.warning("WebSocket closed while processing data")
+                    break
     except Exception as e:
         logger.error(f"WebSocket connection error: {e}")
-    finally:
-        await websocket.close()
+        # Don't close here - let the route handler manage the connection lifecycle
