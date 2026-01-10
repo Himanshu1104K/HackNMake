@@ -10,7 +10,15 @@ logger = get_logger(__name__)
 
 
 async def get_device_data(id: str):
-    pass
+    db: Session = SessionLocal()
+    try:
+        data = db.query(DataModel).filter(DataModel.animal_id == id).all()
+        return data
+    except Exception as e:
+        logger.error(f"Error getting device data: {e}")
+        return []
+    finally:
+        db.close()
 
 
 async def manage_data(device_id: str, data: dict) -> None:
