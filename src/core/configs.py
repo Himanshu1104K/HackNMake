@@ -10,9 +10,6 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["*"]
 
     OPENAI_API_KEY: str
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
-    DATA_EXPIRY_SECONDS: int = 60 * 60 * 24  # 1 day
     database_url: str = (
         "postgresql+psycopg://"
     )
