@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from src.core.db import Base
@@ -18,3 +18,6 @@ class Animals(Base):
     animal_instances = relationship(
         "Animal", back_populates="animal_type", cascade="all, delete-orphan"
     )
+
+    # Indexes for performance
+    __table_args__ = (Index("idx_animals_created_at", "created_at"),)

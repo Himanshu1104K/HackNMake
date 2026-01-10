@@ -27,20 +27,20 @@ async def get_animals(page_number: int, page_size: int):
         # Calculate offset
         offset = (page_number - 1) * page_size
 
-        # Get total count
+        # Optimize: Get total count efficiently
         total = db.query(func.count(AnimalsModel.id)).scalar()
 
-        # Query animals with pagination
+        # Query animals with pagination - only select id and name columns for better performance
         animals = (
-            db.query(AnimalsModel)
+            db.query(AnimalsModel.id, AnimalsModel.name)
             .order_by(AnimalsModel.created_at.desc())
             .offset(offset)
             .limit(page_size)
             .all()
         )
 
-        # Convert to AnimalData format
-        data = [{"id": animal.id, "name": animal.name} for animal in animals]
+        # Convert to AnimalData format (animals are Row objects with id and name attributes)
+        data = [{"id": row.id, "name": row.name} for row in animals]
 
         logger.info(
             f"Retrieved {len(data)} animals for page {page_number} (total: {total})"
