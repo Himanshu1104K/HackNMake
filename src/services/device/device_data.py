@@ -10,6 +10,43 @@ from src.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
+def update_animal_status(device_id: str, status: str) -> bool:
+    """
+    Update animal status in the database.
+
+    Args:
+        device_id: The animal device ID (Animal.id in the database)
+        status: The status to set (e.g., "active", "deactive")
+
+    Returns:
+        bool: True if the status was updated, False otherwise
+    """
+    db: Session = SessionLocal()
+    try:
+        # Find the animal by device ID
+        animal = db.query(AnimalModel).filter(AnimalModel.id == device_id).first()
+
+        if not animal:
+            logger.warning(f"Animal with device_id {device_id} not found")
+            return False
+
+        # Update status
+        animal.status = status
+
+        db.commit()
+        db.refresh(animal)
+
+        logger.info(f"Updated animal {device_id} status to {status}")
+        return True
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating animal status for {device_id}: {e}")
+        return False
+    finally:
+        db.close()
+
+
 async def get_device_data(id: str):
     """
     Fetch animal by device ID and return id, name, status, is_critical, and created_at.

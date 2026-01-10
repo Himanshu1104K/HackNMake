@@ -11,7 +11,11 @@ from pydantic import BaseModel
 from typing import Optional
 from src.utils.logging import get_logger
 from src.models.animal import Animal
-from src.services.device.device_data import get_device_data, handle_device_data
+from src.services.device.device_data import (
+    get_device_data,
+    handle_device_data,
+    update_animal_status,
+)
 from src.services.device.animals import (
     get_animals,
     create_animal,
@@ -48,13 +52,17 @@ class ImportAnimalsResponse(BaseModel):
 @router.websocket("/ws")
 async def device_data(websocket: WebSocket):
     device_data = None
+    device_id = None
     try:
         await websocket.accept()
 
         id = websocket.query_params.get("id")
+        device_id = id
         try:
             device_data = await get_device_data(id)
             if device_data is not None:
+                # Update animal status to "active" when WebSocket connects
+                update_animal_status(id, "active")
                 await handle_device_data(websocket, device_data)
             else:
                 try:
@@ -83,6 +91,9 @@ async def device_data(websocket: WebSocket):
             # WebSocket may already be closed
             pass
     finally:
+        # Update animal status to "deactive" when WebSocket disconnects
+        if device_id:
+            update_animal_status(device_id, "deactive")
         # Only close if the WebSocket is still open
         try:
             await websocket.close()
