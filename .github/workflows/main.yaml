@@ -7,7 +7,7 @@ on:
 
 jobs:
   CI-CD:
-    runs-on: ["self-hosted"]
+    runs-on: "self-hosted"
     steps:
       - name: update system
         run: sudo apt update
