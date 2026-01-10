@@ -1,7 +1,8 @@
 import json
 import uuid
 from starlette.websockets import WebSocket
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from src.models.schema.animal import Animal as AnimalModel
 from src.models.schema.data import Data as DataModel
 from src.core.db import SessionLocal
 from src.utils.logging import get_logger
@@ -10,13 +11,43 @@ logger = get_logger(__name__)
 
 
 async def get_device_data(id: str):
+    """
+    Get device data by joining Animal with Animals table.
+
+    Args:
+        id: The device/animal ID (Animal.id)
+
+    Returns:
+        dict: Dictionary with id, name, status, is_critical, and created_at
+              Returns None if device not found
+    """
     db: Session = SessionLocal()
     try:
-        data = db.query(DataModel).filter(DataModel.animal_id == id).all()
-        return data
+        # Query Animal and eagerly load the related Animals table using joinedload
+        data = (
+            db.query(AnimalModel)
+            .options(joinedload(AnimalModel.animal_type))
+            .filter(AnimalModel.id == id)
+            .first()
+        )
+
+        if not data:
+            logger.warning(f"Device with id {id} not found")
+            return None
+
+        # Get name from the related Animals table
+        name = data.animal_type.name if data.animal_type else None
+
+        return {
+            "id": data.id,
+            "name": name,
+            "status": data.status,
+            "is_critical": data.is_critical,
+            "created_at": data.created_at.isoformat() if data.created_at else None,
+        }
     except Exception as e:
         logger.error(f"Error getting device data: {e}")
-        return []
+        return None
     finally:
         db.close()
 
