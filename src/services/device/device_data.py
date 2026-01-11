@@ -151,32 +151,72 @@ async def handle_device_data(websocket: WebSocket, device_data: dict):
     device_id = device_data.get("id") or device_data.get("device_id")
 
     if not device_id:
-        await websocket.send_json({"type": "error", "message": "Device ID not found"})
+        logger.warning("Device ID not found in device_data")
+        try:
+            await websocket.send_json({"type": "error", "message": "Device ID not found"})
+        except Exception as e:
+            logger.error(f"Failed to send error message: {e}")
         return
+
+    logger.info(f"Starting WebSocket data handler for device {device_id}")
 
     try:
         while True:
             try:
+                logger.debug(f"Waiting for data from device {device_id}")
                 data = await websocket.receive_json()
+                logger.debug(f"Received data from device {device_id}: {list(data.keys())}")
+                
                 await manage_data(device_id, data)
+                logger.debug(f"Successfully processed data for device {device_id}")
+                
             except json.JSONDecodeError as e:
-                logger.error(f"Invalid JSON received: {e}")
+                logger.error(
+                    f"Invalid JSON received from device {device_id}: {e}. "
+                    f"Raw error: {str(e)}"
+                )
                 try:
                     await websocket.send_json(
                         {"type": "error", "message": "Invalid JSON format"}
                     )
-                except Exception:
+                    logger.debug(f"Sent error response to device {device_id}")
+                except Exception as send_error:
                     # WebSocket is closed - break the loop
-                    logger.warning("WebSocket closed while processing data")
+                    logger.warning(
+                        f"WebSocket closed while sending error to device {device_id}. "
+                        f"Close error: {send_error}"
+                    )
                     break
             except Exception as e:
-                logger.error(f"Error processing data: {e}")
+                error_type = type(e).__name__
+                error_message = str(e)
+                logger.error(
+                    f"Error processing data for device {device_id}: "
+                    f"Type: {error_type}, Message: {error_message}, "
+                    f"Exception: {repr(e)}"
+                )
                 try:
-                    await websocket.send_json({"type": "error", "message": str(e)})
-                except Exception:
+                    await websocket.send_json(
+                        {"type": "error", "message": f"Error processing data: {error_message}"}
+                    )
+                    logger.debug(f"Sent error response to device {device_id}")
+                except Exception as send_error:
                     # WebSocket is closed - break the loop
-                    logger.warning("WebSocket closed while processing data")
+                    send_error_type = type(send_error).__name__
+                    logger.warning(
+                        f"WebSocket closed while sending error to device {device_id}. "
+                        f"Send error type: {send_error_type}, "
+                        f"Send error message: {str(send_error)}"
+                    )
                     break
     except Exception as e:
-        logger.error(f"WebSocket connection error: {e}")
+        error_type = type(e).__name__
+        error_message = str(e)
+        logger.error(
+            f"WebSocket connection error for device {device_id}: "
+            f"Type: {error_type}, Message: {error_message}, "
+            f"Exception: {repr(e)}"
+        )
         # Don't close here - let the route handler manage the connection lifecycle
+    finally:
+        logger.info(f"WebSocket data handler ended for device {device_id}")
