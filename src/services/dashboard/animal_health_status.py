@@ -37,7 +37,7 @@ async def get_status(websocket: WebSocket):
 
     Initially sends data with overall_health_percentage and health_status as None,
     then uses data_parser to calculate and send updated health status.
-    
+
     Note: websocket.accept() should be called by the route handler before calling this function.
     """
     try:
@@ -73,7 +73,7 @@ async def get_status(websocket: WebSocket):
                     health_metrics = None
                     if initial_sent:
                         # After initial send, calculate health status from averaged last 5 records
-                        health_metrics = parse_health_data(
+                        health_metrics = await parse_health_data(
                             last_5_records, device_id=animal_id
                         )
                         overall_health_percentage = health_metrics.get(

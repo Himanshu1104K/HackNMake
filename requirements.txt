@@ -31,4 +31,4 @@ fastapi-swagger-dark==0.0.9
 redis[hiredis]==4.5.0
 
 langchain
-langgraph
+langchain-openai

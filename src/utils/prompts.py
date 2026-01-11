@@ -8,7 +8,7 @@ DATA_PARSER_PROMPT = ChatPromptTemplate.from_messages(
         ),
         (
             "user",
-            "",
+            "{data_records}",
         ),
     ]
 )
