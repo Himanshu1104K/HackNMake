@@ -147,7 +147,7 @@ async def get_status(websocket: WebSocket):
                     )
 
                 # Wait 5 seconds before next send
-                await asyncio.sleep(5)
+                await asyncio.sleep(3)
 
             except Exception as e:
                 logger.error(f"Error sending health status data: {e}")
