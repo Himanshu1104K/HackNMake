@@ -32,3 +32,4 @@ redis[hiredis]==4.5.0
 
 langchain
 langchain-openai
+git+https://github.com/toon-format/toon-python.git

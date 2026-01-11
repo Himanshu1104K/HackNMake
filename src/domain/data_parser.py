@@ -8,6 +8,7 @@ from src.core.db import SessionLocal
 from src.core.configs import settings
 from src.utils.logging import get_logger
 from src.utils.prompts import DATA_PARSER_PROMPT
+from toon_format import encode, decode
 
 logger = get_logger(__name__)
 
@@ -47,8 +48,9 @@ async def parse_health_data(
         chain = DATA_PARSER_PROMPT | llm | StrOutputParser()
 
         # Prepare inputs for the prompt
+        data_records_encoded = encode(records_to_analyze)
         inputs = {
-            "data_records": json.dumps(records_to_analyze, indent=2),
+            "data_records": data_records_encoded,
         }
 
         # Invoke the chain
