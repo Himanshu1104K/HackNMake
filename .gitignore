@@ -2,3 +2,5 @@ test
 *__pycache__*
 *.env
 .venv
+New_key
+New_key.pub
